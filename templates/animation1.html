@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Animation 1 - Interactive Particles</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0; overflow: hidden;
+      width: 100vw; height: 100vh;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      transition: opacity 0.5s ease-out;
+      position: relative;
+    }
+    body.fade-out {
+      opacity: 0;
+    }
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+    .nav-button {
+      position: fixed;
+      top: 0;
+      width: 50px;
+      height: 100vh;
+      font-size: 30px;
+      color: white;
+      background: rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      cursor: pointer;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      z-index: 1000;
+      border-radius: 0 10px 10px 0;
+    }
+    .nav-button.visible {
+      opacity: 1;
+    }
+    #prev-btn {
+      left: 0;
+      border-right: 1px solid rgba(255,255,255,0.2);
+    }
+    #next-btn {
+      right: 0;
+      border-left: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px 0 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="prev-btn" class="nav-button" title="Previous">&#9664;</div>
+  <div id="next-btn" class="nav-button" title="Next">&#9654;</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      createParticles();
+    }
+    window.addEventListener('resize', resize);
+
+    // Mouse position object
+    const mouse = {
+      x: null,
+      y: null,
+      radius: 150 // radius of influence
+    };
+
+    window.addEventListener('mousemove', (event) => {
+      mouse.x = event.x;
+      mouse.y = event.y;
+    });
+
+    window.addEventListener('mouseout', () => {
+      mouse.x = null;
+      mouse.y = null;
+    });
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.size = Math.random() * 3 + 1;
+        this.baseX = this.x;
+        this.baseY = this.y;
+        this.density = (Math.random() * 30) + 1;
+        this.color = 'rgba(255, 255, 255, 0.8)';
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      update() {
+        // Mouse interaction - particles move away gently if mouse near
+        if (mouse.x !== null && mouse.y !== null) {
+          let dx = this.x - mouse.x;
+          let dy = this.y - mouse.y;
+          let distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < mouse.radius) {
+            let force = (mouse.radius - distance) / mouse.radius;
+            let directionX = dx / distance;
+            let directionY = dy / distance;
+
+            // Apply force multiplied by density, eased movement away
+            this.x += directionX * force * this.density * 0.1;
+            this.y += directionY * force * this.density * 0.1;
+          } else {
+            // Slowly return to base position
+            let dxBack = this.baseX - this.x;
+            let dyBack = this.baseY - this.y;
+            this.x += dxBack * 0.05;
+            this.y += dyBack * 0.05;
+          }
+        }
+
+        this.draw();
+      }
+    }
+
+    let particlesArray = [];
+    const numberOfParticles = 300;
+
+    function createParticles() {
+      particlesArray = [];
+      for (let i = 0; i < numberOfParticles; i++) {
+        particlesArray.push(new Particle());
+      }
+    }
+
+    resize();
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      particlesArray.forEach(p => p.update());
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Edge navigation buttons logic
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    window.addEventListener('mousemove', (event) => {
+      const x = event.clientX;
+      if (x < 50) {
+        prevBtn.classList.add('visible');
+      } else {
+        prevBtn.classList.remove('visible');
+      }
+      if (x > window.innerWidth - 50) {
+        nextBtn.classList.add('visible');
+      } else {
+        nextBtn.classList.remove('visible');
+      }
+    });
+
+    prevBtn.onclick = () => {
+      document.body.classList.add('fade-out');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
+    };
+
+    nextBtn.onclick = () => {
+      document.body.classList.add('fade-out');
+      setTimeout(() => {
+        window.location.href = '/animation2';
+      }, 500);
+    };
+  </script>
+</body>
+</html>
